@@ -1,0 +1,8 @@
+after registration, user is first pending validation, after verifying the email he's blocked until he enters the car info to his profile.
+in case of deleting the last car he's blocked again.
+#todo:
+	[OK] authorization: make sure only admin can delete users, (and users can delete their own profiles)
+	- send the verification email and then confirming the registration of users, changing the status to BLOCKED until they add a car
+	- make sure users can't use any functionalities while they are blocked (apart from adding the car to their profile in order to be unblocked)
+	- tokens and giving access only to certain parts of the app accordingly - different services (not only users!!!) also have to authorize in order to get data from us?
+	- add the correct response codes (according to documentation)
