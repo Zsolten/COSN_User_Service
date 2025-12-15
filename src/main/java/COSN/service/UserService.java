@@ -24,8 +24,8 @@ public class UserService{
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
 
-    @Autowired
-    private AccountVerificationService verificationService;
+    // @Autowired
+    // private AccountVerificationService verificationService;
 
 
     public UserService(UserRepository repository){
@@ -66,12 +66,12 @@ public class UserService{
         user.setEmail(userData.getEmail());
         user.setPassword(passwordEncoder.encode(userData.getPassword()));
         user.setPhoneNumber(userData.getPhoneNumber());
-        user.setStatus(UserStatus.PENDING_VERIFICATION);
+        user.setStatus(UserStatus.ACTIVE);
         user.setRole(UserRole.USER);
         User savedUser = repository.save(user);
 
         //add sending the email for account verification
-        verificationService.sendVerificationEmail(savedUser);
+        // verificationService.sendVerificationEmail(savedUser);
 
         return UserMapper.toRegisterResponseDTO(savedUser);
 
