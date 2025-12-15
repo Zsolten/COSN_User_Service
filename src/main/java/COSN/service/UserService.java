@@ -24,9 +24,6 @@ public class UserService{
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
 
-    // @Autowired
-    // private AccountVerificationService verificationService;
-
 
     public UserService(UserRepository repository){
         this.repository = repository;
@@ -70,11 +67,7 @@ public class UserService{
         user.setRole(UserRole.USER);
         User savedUser = repository.save(user);
 
-        //add sending the email for account verification
-        // verificationService.sendVerificationEmail(savedUser);
-
         return UserMapper.toRegisterResponseDTO(savedUser);
-
     }
 
     public UserDTO updateUser(UUID id, UpdateUserRequestDTO dto) {

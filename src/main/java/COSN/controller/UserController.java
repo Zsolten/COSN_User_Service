@@ -2,7 +2,6 @@ package COSN.controller;
 import java.util.List;
 import java.util.UUID;
 
-import COSN.service.AccountVerificationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -14,12 +13,10 @@ import COSN.service.UserService;
 @RequestMapping("/api")
 public class UserController {
     private final UserService userService;
-    private final AccountVerificationService verificationService;
 
 
-    public UserController(UserService userService, AccountVerificationService verificationService) {
+    public UserController(UserService userService) {
         this.userService = userService;
-        this.verificationService = verificationService;
     }
 
     @PostMapping("/register")
@@ -35,7 +32,6 @@ public class UserController {
 
     @GetMapping("/verify")
     public ResponseEntity<String> verifyAccount(@RequestParam String token) {
-        verificationService.verifyAccount(token);
         return ResponseEntity.ok("Account successfully verified!");
     }
 
