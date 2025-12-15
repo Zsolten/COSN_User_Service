@@ -2,14 +2,16 @@ package COSN.dto;
 
 import lombok.Data;
 
+import java.util.UUID;
+
 @Data
 public class LoginResponseDTO {
     private String token;
-    private Long userId;
+    private UUID userId;
     private String email;
     private String name;
 
-    public LoginResponseDTO(String token, Long userId, String email, String name) {
+    public LoginResponseDTO(String token, UUID userId, String email, String name) {
         this.token = token;
         this.userId = userId;
         this.email = email;
@@ -24,11 +26,11 @@ public class LoginResponseDTO {
         this.token = token;
     }
 
-    public Long getUserId() {
+    public UUID getUserId() {
         return userId;
     }
 
-    public void setUserId(Long userId) {
+    public void setUserId(UUID userId) {
         this.userId = userId;
     }
 

@@ -1,1 +1,0 @@
-# COSN_User_Service

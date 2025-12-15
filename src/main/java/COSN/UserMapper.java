@@ -10,7 +10,7 @@ import COSN.entities.User;
 public class UserMapper {
     public static UserDTO toDTO(User user){
         var userdto = new UserDTO();
-        userdto.setId(Long.toString(user.getId()));
+        userdto.setId(user.getId().toString());
         userdto.setFirstName(user.getName());
         userdto.setLastName(user.getSurname());
         userdto.setEmail(user.getEmail());
@@ -29,7 +29,7 @@ public class UserMapper {
 
       public static RegisterResponseDTO toRegisterResponseDTO(User user) {
         RegisterResponseDTO dto = new RegisterResponseDTO();
-        dto.setId(Long.toString(user.getId()));
+        dto.setId(user.getId().toString());
         dto.setEmail(user.getEmail());
         dto.setStatus(user.getStatus().name());
         return dto;

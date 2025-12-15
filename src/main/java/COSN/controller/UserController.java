@@ -1,9 +1,8 @@
 package COSN.controller;
 import java.util.List;
-import java.util.Map;
+import java.util.UUID;
 
-import COSN.config.JwtTokenProvider;
-import org.springframework.beans.factory.annotation.Autowired;
+import COSN.service.AccountVerificationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -14,13 +13,13 @@ import COSN.service.UserService;
 @RestController
 @RequestMapping("/api")
 public class UserController {
-    @Autowired
-    private JwtTokenProvider jwtTokenProvider;
-
     private final UserService userService;
+    private final AccountVerificationService verificationService;
 
-    public UserController(UserService userService) {
+
+    public UserController(UserService userService, AccountVerificationService verificationService) {
         this.userService = userService;
+        this.verificationService = verificationService;
     }
 
     @PostMapping("/register")
@@ -34,45 +33,28 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-
-    @PostMapping("/validate")
-    public ResponseEntity<?> validateToken(@RequestHeader("Authorization") String authHeader) {
-        try {
-            String token = authHeader.replace("Bearer ", "");
-
-            if (!jwtTokenProvider.validateToken(token)) {
-                return ResponseEntity.status(401).body(Map.of("valid", false, "error", "Invalid token"));
-            }
-
-            Long userId = jwtTokenProvider.getUserIdFromToken(token);
-            String role = jwtTokenProvider.getRoleFromToken(token);
-
-            return ResponseEntity.ok(Map.of(
-                    "valid", true,
-                    "userId", userId,
-                    "role", role
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.status(401).body(Map.of("valid", false, "error", e.getMessage()));
-        }
+    @GetMapping("/verify")
+    public ResponseEntity<String> verifyAccount(@RequestParam String token) {
+        verificationService.verifyAccount(token);
+        return ResponseEntity.ok("Account successfully verified!");
     }
 
 
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal")
+    @PreAuthorize("hasRole('ADMIN') or #userId ==  T(java.util.UUID).fromString(authentication.name)")
     @DeleteMapping("/{userId}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long userId) {
+    public ResponseEntity<Void> deleteUser(@PathVariable UUID userId) {
         userService.deleteUser(userId);
         return ResponseEntity.noContent().build();
     }
 
 
     @PatchMapping("/user/{id}")
-    public UserDTO updateUser(@RequestBody UpdateUserRequestDTO req, @PathVariable Long id) {
+    public UserDTO updateUser(@RequestBody UpdateUserRequestDTO req, @PathVariable UUID id) {
         return userService.updateUser(id, req);
     }
 
     @GetMapping("/user/{id}")
-    public UserDTO getUserById(@PathVariable Long id){
+    public UserDTO getUserById(@PathVariable UUID id){
         return userService.getUser(id);
     }
     @GetMapping("/users")
@@ -81,17 +63,17 @@ public class UserController {
     }
 
     @GetMapping("/user/{id}/car")
-    public List<CarDTO> getCarByUserId(@PathVariable Long id) {
+    public List<CarDTO> getCarByUserId(@PathVariable UUID id) {
         return userService.getCarByUserId(id);
     }
 
     @PutMapping("/user/{id}/car")
-    public CarDTO addCar(@PathVariable Long id, @RequestBody CarRequestDTO car) {
+    public CarDTO addCar(@PathVariable UUID id, @RequestBody CarRequestDTO car) {
         return userService.addCarToUser(id, car);
     }
 
     @DeleteMapping("/user/{id}/{carId}")
-    public void deleteCar(@PathVariable Long id, @PathVariable Long carId) {
+    public void deleteCar(@PathVariable UUID id, @PathVariable Long carId) {
         userService.deleteCarByUser(id, carId);
     }
 

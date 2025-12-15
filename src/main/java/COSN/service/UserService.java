@@ -1,5 +1,7 @@
 package COSN.service;
 import java.util.List;
+import java.util.UUID;
+
 import COSN.CarMapper;
 import COSN.config.JwtTokenProvider;
 import COSN.dto.*;
@@ -22,6 +24,10 @@ public class UserService{
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
 
+    @Autowired
+    private AccountVerificationService verificationService;
+
+
     public UserService(UserRepository repository){
         this.repository = repository;
     }
@@ -34,10 +40,9 @@ public class UserService{
             throw new RuntimeException("Invalid email or password");
         }
 
-        // Commented temporarily for testing purposes.
-//        if (user.getStatus() == UserStatus.PENDING_VERIFICATION) {
-//            throw new RuntimeException("Account not verified");
-//        }
+        if (user.getStatus() == UserStatus.PENDING_VERIFICATION) {
+            throw new RuntimeException("Account not verified");
+        }
 
         if (user.getStatus() == UserStatus.BLOCKED) {
             throw new RuntimeException("Account is blocked");
@@ -63,11 +68,16 @@ public class UserService{
         user.setPhoneNumber(userData.getPhoneNumber());
         user.setStatus(UserStatus.PENDING_VERIFICATION);
         user.setRole(UserRole.USER);
+        User savedUser = repository.save(user);
+
         //add sending the email for account verification
-        return UserMapper.toRegisterResponseDTO(repository.save(user));
+        verificationService.sendVerificationEmail(savedUser);
+
+        return UserMapper.toRegisterResponseDTO(savedUser);
+
     }
 
-    public UserDTO updateUser(Long id, UpdateUserRequestDTO dto) {
+    public UserDTO updateUser(UUID id, UpdateUserRequestDTO dto) {
         User user = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -78,14 +88,14 @@ public class UserService{
         return UserMapper.toDTO(repository.save(user));
     }
 
-    public void deleteUser(Long id) {
+    public void deleteUser(UUID id) {
         if (!repository.existsById(id)) {
             throw new RuntimeException("User with id " + id + " not found");
         }
         repository.deleteById(id);
     }
 
-    public UserDTO getUser(Long id){
+    public UserDTO getUser(UUID id){
         if (!repository.existsById(id)) {
             throw new RuntimeException("User with id " + id + " not found");
         }
@@ -97,7 +107,7 @@ public class UserService{
         return repository.findAll().stream().map((k) -> UserMapper.toDTO(k)).toList();
     }
 
-    public List<CarDTO> getCarByUserId(Long id){
+    public List<CarDTO> getCarByUserId(UUID id){
         if (!repository.existsById(id)) {
             throw new RuntimeException("User with id " + id + " not found");
         }
@@ -107,7 +117,7 @@ public class UserService{
         return cars.stream().map((CarMapper::CarToDTO)).toList();
     }
 
-    public CarDTO addCarToUser(Long id, CarRequestDTO carDTO){
+    public CarDTO addCarToUser(UUID id, CarRequestDTO carDTO){
         if (!repository.existsById(id)) {
             throw new RuntimeException("User with id " + id + " not found");
         }
@@ -125,11 +135,11 @@ public class UserService{
         else return null;
     }
 
-    public void deleteCarByUser(Long id, Long carId){
+    public void deleteCarByUser(UUID id, Long carId){
         if (!repository.existsById(id)) {
             throw new RuntimeException("User with id " + id + " not found");
         }
-        var optional = repository.findById(carId);
+        var optional = repository.findById(id);
         if (optional.isPresent()) {
             User user = optional.get();
             Car car = user.getCars().stream()
