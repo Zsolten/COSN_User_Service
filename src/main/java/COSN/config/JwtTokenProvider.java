@@ -37,6 +37,9 @@ public class JwtTokenProvider {
     }
 
     public UUID getUserIdFromToken(String token) {
+        if (token == null || token.isEmpty()) {
+            throw new IllegalArgumentException("Token is missing");
+        }
         String userId = Jwts.parser()
                 .verifyWith(getSigningKey())
                 .build()
@@ -47,6 +50,9 @@ public class JwtTokenProvider {
     }
 
     public String getRoleFromToken(String token) {
+        if (token == null || token.isEmpty()) {
+            throw new IllegalArgumentException("Token is missing");
+        }
         return Jwts.parser()
                 .verifyWith(getSigningKey())
                 .build()
@@ -56,6 +62,9 @@ public class JwtTokenProvider {
     }
 
     public boolean validateToken(String token) {
+        if (token == null || token.isEmpty()) {
+            throw new IllegalArgumentException("Token is missing");
+        }
         try {
             Jwts.parser()
                     .verifyWith(getSigningKey())

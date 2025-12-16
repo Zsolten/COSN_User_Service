@@ -6,6 +6,10 @@ import COSN.CarMapper;
 import COSN.config.JwtTokenProvider;
 import COSN.dto.*;
 import COSN.entities.Car;
+import COSN.exceptions.CarNotFoundException;
+import COSN.exceptions.EmailAlreadyExistsException;
+import COSN.exceptions.InvalidCredentialsException;
+import COSN.exceptions.UserNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -34,15 +38,7 @@ public class UserService{
                 .orElseThrow(() -> new RuntimeException("Invalid email or password"));
 
         if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Invalid email or password");
-        }
-
-        if (user.getStatus() == UserStatus.PENDING_VERIFICATION) {
-            throw new RuntimeException("Account not verified");
-        }
-
-        if (user.getStatus() == UserStatus.BLOCKED) {
-            throw new RuntimeException("Account is blocked");
+            throw new InvalidCredentialsException();
         }
 
         String token = jwtTokenProvider.generateToken(
@@ -50,12 +46,12 @@ public class UserService{
                 user.getRole().name()
         );
 
-        return new LoginResponseDTO(token, user.getId(), user.getEmail(), user.getName());
+        return new LoginResponseDTO(token, user.getId(), user.getEmail(), user.getName(), user.getSurname());
     }
 
     public RegisterResponseDTO createUser(RegisterRequestDTO userData){
         if (repository.findByEmail(userData.getEmail()).isPresent()){
-            throw new RuntimeException("Email is already in use");
+            throw new EmailAlreadyExistsException("Email is already in use");
         }
         User user = new User();
         user.setName(userData.getFirstName());
@@ -72,7 +68,7 @@ public class UserService{
 
     public UserDTO updateUser(UUID id, UpdateUserRequestDTO dto) {
         User user = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException());
 
         if (dto.getFirstName() != null) user.setName(dto.getFirstName());
         if (dto.getLastName() != null) user.setSurname(dto.getLastName());
@@ -83,14 +79,14 @@ public class UserService{
 
     public void deleteUser(UUID id) {
         if (!repository.existsById(id)) {
-            throw new RuntimeException("User with id " + id + " not found");
+            throw new UserNotFoundException();
         }
         repository.deleteById(id);
     }
 
     public UserDTO getUser(UUID id){
         if (!repository.existsById(id)) {
-            throw new RuntimeException("User with id " + id + " not found");
+            throw new UserNotFoundException();
         }
         var optional = repository.findById(id);
         return UserMapper.toDTO(optional.orElse(null));
@@ -102,7 +98,7 @@ public class UserService{
 
     public List<CarDTO> getCarByUserId(UUID id){
         if (!repository.existsById(id)) {
-            throw new RuntimeException("User with id " + id + " not found");
+            throw new UserNotFoundException();
         }
         var optional = repository.findById(id);
         User user = optional.get();
@@ -112,25 +108,39 @@ public class UserService{
 
     public CarDTO addCarToUser(UUID id, CarRequestDTO carDTO){
         if (!repository.existsById(id)) {
-            throw new RuntimeException("User with id " + id + " not found");
+            throw new UserNotFoundException();
         }
         var optional = repository.findById(id);
         if (optional.isPresent()) {
             User user = optional.get();
-            Car car = CarMapper.CarReqDTOToEntity(carDTO, user);
-            user.getCars().add(car);
+            Car existingCar = user.getCars().stream()
+                    .filter(c -> c.getLicense().equals(carDTO.getLicensePlate()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (existingCar != null) {
+                existingCar.setBrand(carDTO.getMake());
+                existingCar.setModel(carDTO.getModel());
+                existingCar.setColor(carDTO.getColor());
+                existingCar.setYear(carDTO.getYear());
+            } else {
+                Car newCar = CarMapper.CarReqDTOToEntity(carDTO, user);
+                newCar.setId(null);
+                user.getCars().add(newCar);
+                existingCar = newCar;
+            }
             if(user.getStatus().equals(UserStatus.BLOCKED)){
                 user.setStatus(UserStatus.ACTIVE);
             }
             repository.save(user);
-            return CarMapper.CarToDTO(user.getCars().get(user.getCars().size() - 1));
+            return CarMapper.CarToDTO(existingCar);
         }
         else return null;
     }
 
     public void deleteCarByUser(UUID id, Long carId){
         if (!repository.existsById(id)) {
-            throw new RuntimeException("User with id " + id + " not found");
+            throw new UserNotFoundException();
         }
         var optional = repository.findById(id);
         if (optional.isPresent()) {
@@ -138,7 +148,7 @@ public class UserService{
             Car car = user.getCars().stream()
                     .filter(c -> c.getId().equals(carId))
                     .findFirst()
-                    .orElseThrow(() -> new RuntimeException("Car not found"));
+                    .orElseThrow(() -> new CarNotFoundException("Car not found"));
             user.getCars().remove(car);
             if(user.getCars().isEmpty()){ //user has no car!
                 user.setStatus(UserStatus.BLOCKED);

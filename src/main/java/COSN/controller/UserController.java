@@ -2,6 +2,7 @@ package COSN.controller;
 import java.util.List;
 import java.util.UUID;
 
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +21,7 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public RegisterResponseDTO createUser(@RequestBody RegisterRequestDTO req) {
+    public RegisterResponseDTO createUser(@Valid @RequestBody RegisterRequestDTO req) {
         return userService.createUser(req);
     }
 
@@ -36,17 +37,17 @@ public class UserController {
     }
 
 
-    @PreAuthorize("hasRole('ADMIN') or #userId ==  T(java.util.UUID).fromString(authentication.name)")
+    @PreAuthorize("(hasRole('ADMIN') or #userId ==  T(java.util.UUID).fromString(authentication.name))")
     @DeleteMapping("/{userId}")
     public ResponseEntity<Void> deleteUser(@PathVariable UUID userId) {
         userService.deleteUser(userId);
         return ResponseEntity.noContent().build();
     }
 
-
-    @PatchMapping("/user/{id}")
-    public UserDTO updateUser(@RequestBody UpdateUserRequestDTO req, @PathVariable UUID id) {
-        return userService.updateUser(id, req);
+    @PreAuthorize("(hasRole('ADMIN') or #userId ==  T(java.util.UUID).fromString(authentication.name))")
+    @PatchMapping("/user/{userId}")
+    public UserDTO updateUser(@RequestBody UpdateUserRequestDTO req, @PathVariable UUID userId) {
+        return userService.updateUser(userId, req);
     }
 
     @GetMapping("/user/{id}")
@@ -63,11 +64,13 @@ public class UserController {
         return userService.getCarByUserId(id);
     }
 
+    @PreAuthorize("(hasRole('ADMIN') or #id ==  T(java.util.UUID).fromString(authentication.name))")
     @PutMapping("/user/{id}/car")
     public CarDTO addCar(@PathVariable UUID id, @RequestBody CarRequestDTO car) {
         return userService.addCarToUser(id, car);
     }
 
+    @PreAuthorize("(hasRole('ADMIN') or #id ==  T(java.util.UUID).fromString(authentication.name))")
     @DeleteMapping("/user/{id}/{carId}")
     public void deleteCar(@PathVariable UUID id, @PathVariable Long carId) {
         userService.deleteCarByUser(id, carId);
