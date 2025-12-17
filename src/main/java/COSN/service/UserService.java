@@ -35,7 +35,7 @@ public class UserService{
 
     public LoginResponseDTO authenticateUser(LoginRequestDTO loginRequest) {
         User user = repository.findByEmail(loginRequest.getEmail())
-                .orElseThrow(() -> new RuntimeException("Invalid email or password"));
+                .orElseThrow(() -> new InvalidCredentialsException());
 
         if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
             throw new InvalidCredentialsException();
