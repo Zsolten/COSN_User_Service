@@ -150,9 +150,6 @@ public class UserService{
                     .findFirst()
                     .orElseThrow(() -> new CarNotFoundException("Car not found"));
             user.getCars().remove(car);
-            if(user.getCars().isEmpty()){ //user has no car!
-                user.setStatus(UserStatus.BLOCKED);
-            }
             repository.save(user);
         }
     }
