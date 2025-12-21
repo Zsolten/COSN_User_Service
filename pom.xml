@@ -109,6 +109,13 @@
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 
+		<!--Message broker-->
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>sns</artifactId>
+			<version>2.25.60</version>
+		</dependency>
+
 
 	</dependencies>
 
